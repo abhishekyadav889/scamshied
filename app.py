@@ -10,7 +10,7 @@ load_dotenv()
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins="*")
 
 
 def analyze_message(user_message):
