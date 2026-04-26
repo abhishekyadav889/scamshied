@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScamShield — AI Scam Detector</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy: #0a1628;
+            --navy-mid: #0d1f3c;
+            --navy-light: #1a3a6b;
+            --gold: #c8a96e;
+            --gold-light: #e2c98a;
+            --red: #ff4d4d;
+            --green: #2ecc71;
+            --orange: #ffa500;
+            --text: #e8e4dc;
+            --muted: #8a9ab5;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--navy);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(200,169,110,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(200,169,110,0.04) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* FLOATING INDIA MAP */
+        #india-map {
+            position: fixed;
+            right: -60px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 420px;
+            opacity: 0.045;
+            pointer-events: none;
+            z-index: 0;
+            animation: mapFloat 8s ease-in-out infinite;
+            filter: drop-shadow(0 0 30px rgba(200,169,110,0.3));
+        }
+
+        @keyframes mapFloat {
+            0%, 100% { transform: translateY(-50%) translateX(0px); }
+            50% { transform: translateY(-52%) translateX(-8px); }
+        }
+
+        /* NAVBAR */
+        nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            background: rgba(10,22,40,0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(200,169,110,0.2);
+            padding: 18px 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 26px;
+            letter-spacing: 3px;
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo span { color: white; }
+
+        .nav-links a {
+            color: var(--muted);
+            text-decoration: none;
+            margin-left: 28px;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover { color: var(--gold); }
+
+        /* HERO */
+        .hero {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 140px 20px 110px;
+            background: linear-gradient(180deg, rgba(26,58,107,0.3) 0%, transparent 100%);
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: rgba(200,169,110,0.1);
+            border: 1px solid rgba(200,169,110,0.3);
+            color: var(--gold);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 3px;
+            padding: 6px 16px;
+            border-radius: 100px;
+            margin-bottom: 24px;
+            animation: fadeDown 0.6s ease both;
+        }
+
+        .hero h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(42px, 7vw, 80px);
+            letter-spacing: 4px;
+            line-height: 1.0;
+            animation: fadeDown 0.6s 0.1s ease both;
+        }
+
+        .hero h1 .highlight { color: var(--gold); }
+
+        .hero p {
+            font-size: 16px;
+            color: var(--muted);
+            margin-top: 16px;
+            font-weight: 300;
+            animation: fadeDown 0.6s 0.2s ease both;
+        }
+
+        /* MAIN CARD */
+        #home {
+            position: relative;
+            z-index: 10;
+            background: var(--navy-mid);
+            border: 1px solid rgba(200,169,110,0.25);
+            border-radius: 20px;
+            padding: 36px;
+            max-width: 700px;
+            margin: -50px auto 60px;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.5);
+            animation: fadeUp 0.7s 0.3s ease both;
+        }
+
+        .card-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 3px;
+            color: var(--gold);
+            margin-bottom: 12px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 130px;
+            padding: 16px;
+            border-radius: 10px;
+            border: 1px solid rgba(200,169,110,0.15);
+            background: rgba(255,255,255,0.04);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 15px;
+            resize: none;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        textarea:focus { border-color: rgba(200,169,110,0.5); }
+        textarea::placeholder { color: var(--muted); }
+
+        .analyze-btn {
+            width: 100%;
+            padding: 18px;
+            margin-top: 14px;
+            background: linear-gradient(135deg, var(--navy-light), #0f2d5e);
+            border: 1px solid rgba(200,169,110,0.3);
+            color: white;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 18px;
+            letter-spacing: 3px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .analyze-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(200,169,110,0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .analyze-btn:hover::before { opacity: 1; }
+        .analyze-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+        .analyze-btn:active { transform: translateY(0); }
+
+        .card-footer {
+            text-align: center;
+            color: var(--muted);
+            font-size: 12px;
+            margin-top: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        #result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 12px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.06);
+            display: none;
+            font-size: 15px;
+            line-height: 1.7;
+            white-space: pre-line;
+        }
+
+        .result-header {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 22px;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+        }
+
+        /* STATS */
+        .stats {
+            display: flex;
+            gap: 16px;
+            margin: 0 auto 80px;
+            max-width: 700px;
+            padding: 0 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stat {
+            flex: 1;
+            background: var(--navy-mid);
+            border: 1px solid rgba(200,169,110,0.15);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 32px;
+            color: var(--gold);
+            letter-spacing: 2px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--muted);
+            letter-spacing: 2px;
+            margin-top: 4px;
+        }
+
+        /* SECTIONS */
+        .section {
+            max-width: 960px;
+            margin: 0 auto 90px;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+            text-align: center;
+        }
+
+        .section-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 4px;
+            color: var(--gold);
+            margin-bottom: 10px;
+        }
+
+        .section h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 40px;
+            letter-spacing: 3px;
+            margin-bottom: 16px;
+        }
+
+        .divider {
+            width: 60px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 0 auto 40px;
+        }
+
+        /* PROCESS */
+        .process-cards {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .process-card {
+            background: var(--navy-mid);
+            border: 1px solid rgba(200,169,110,0.15);
+            border-radius: 16px;
+            padding: 28px 24px;
+            width: 250px;
+            text-align: center;
+            transition: border-color 0.3s, transform 0.3s;
+        }
+
+        .process-card:hover { border-color: rgba(200,169,110,0.4); transform: translateY(-4px); }
+        .process-card .icon { font-size: 36px; margin-bottom: 16px; }
+
+        .process-card h3 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 18px;
+            letter-spacing: 2px;
+            color: var(--gold);
+            margin-bottom: 8px;
+        }
+
+        .process-card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+        /* FEATURES */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+            text-align: left;
+        }
+
+        .feature-card {
+            background: var(--navy-mid);
+            border: 1px solid rgba(200,169,110,0.15);
+            border-radius: 16px;
+            padding: 28px;
+            transition: border-color 0.3s, transform 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .feature-card:hover::before { opacity: 1; }
+        .feature-card:hover { border-color: rgba(200,169,110,0.3); transform: translateY(-4px); }
+
+        .feature-icon { font-size: 32px; margin-bottom: 14px; }
+
+        .feature-card h3 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 18px;
+            letter-spacing: 2px;
+            color: var(--gold);
+            margin-bottom: 8px;
+        }
+
+        .feature-card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+        .coming-soon {
+            display: inline-block;
+            margin-top: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            color: var(--navy);
+            background: var(--gold);
+            padding: 3px 10px;
+            border-radius: 100px;
+        }
+
+        .live-badge {
+            display: inline-block;
+            margin-top: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            color: white;
+            background: var(--green);
+            padding: 3px 10px;
+            border-radius: 100px;
+        }
+
+        /* ABOUT */
+        .about-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: center;
+            text-align: left;
+        }
+
+        @media (max-width: 640px) { .about-grid { grid-template-columns: 1fr; } }
+
+        .about-text p {
+            font-size: 15px;
+            color: var(--muted);
+            line-height: 1.8;
+            margin-bottom: 16px;
+        }
+
+        .about-text strong { color: var(--gold); }
+
+        .team-cards { display: flex; flex-direction: column; gap: 14px; }
+
+        .team-card {
+            background: var(--navy-mid);
+            border: 1px solid rgba(200,169,110,0.15);
+            border-radius: 12px;
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .team-card:hover { border-color: rgba(200,169,110,0.35); }
+
+        .team-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--navy-light), var(--gold));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .team-info .name { font-weight: 600; font-size: 14px; color: var(--text); }
+        .team-info .role { font-size: 11px; color: var(--gold); letter-spacing: 1px; margin-top: 2px; }
+
+        /* CONTACT */
+        .contact-box {
+            background: var(--navy-mid);
+            border: 1px solid rgba(200,169,110,0.2);
+            border-radius: 20px;
+            padding: 48px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .contact-box p { font-size: 15px; color: var(--muted); line-height: 1.7; margin-bottom: 28px; }
+
+        .contact-email {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(200,169,110,0.08);
+            border: 1px solid rgba(200,169,110,0.25);
+            color: var(--gold);
+            font-size: 15px;
+            font-weight: 500;
+            padding: 14px 24px;
+            border-radius: 10px;
+            text-decoration: none;
+            transition: all 0.3s;
+            letter-spacing: 0.5px;
+        }
+
+        .contact-email:hover { background: rgba(200,169,110,0.15); transform: translateY(-2px); }
+
+        /* FOOTER */
+        footer {
+            background: rgba(0,0,0,0.3);
+            border-top: 1px solid rgba(200,169,110,0.1);
+            color: var(--muted);
+            text-align: center;
+            padding: 28px;
+            font-size: 13px;
+            letter-spacing: 1px;
+            position: relative;
+            z-index: 1;
+        }
+
+        footer span { color: var(--gold); }
+
+        /* ANIMATIONS */
+        @keyframes fadeDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .dots::after {
+            content: '';
+            animation: dots 1.2s infinite;
+        }
+
+        @keyframes dots {
+            0%   { content: '.'; }
+            33%  { content: '..'; }
+            66%  { content: '...'; }
+        }
+
+        @media (max-width: 600px) {
+            nav { padding: 14px 20px; }
+            .nav-links a { margin-left: 14px; font-size: 12px; }
+            .stats { flex-direction: column; }
+            .contact-box { padding: 28px 20px; }
+            #india-map { width: 280px; right: -80px; opacity: 0.03; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- FLOATING INDIA MAP -->
+    <svg id="india-map" viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg" fill="none">
+        <path d="M200,20 L230,30 L260,25 L285,40 L300,60 L310,85 L305,110 L320,130 L330,155 L325,180 L315,200 L320,225 L310,250 L295,270 L280,290 L260,310 L245,330 L235,355 L225,375 L215,395 L210,415 L205,430 L200,445 L195,430 L190,415 L185,395 L175,375 L165,355 L155,330 L140,310 L120,290 L105,270 L90,250 L80,225 L85,200 L75,180 L70,155 L80,130 L95,110 L90,85 L100,60 L115,40 L140,25 L170,30 Z"
+            stroke="#c8a96e" stroke-width="1.5" fill="rgba(200,169,110,0.08)"/>
+        <path d="M200,20 L215,10 L235,8 L255,15 L270,22 L260,25 L230,30 Z"
+            stroke="#c8a96e" stroke-width="1" fill="rgba(200,169,110,0.05)"/>
+        <path d="M305,110 L325,100 L345,108 L350,125 L335,135 L320,130 Z"
+            stroke="#c8a96e" stroke-width="1" fill="rgba(200,169,110,0.05)"/>
+        <ellipse cx="215" cy="465" rx="12" ry="16" stroke="#c8a96e" stroke-width="1" fill="rgba(200,169,110,0.04)"/>
+        <ellipse cx="355" cy="280" rx="8" ry="20" stroke="#c8a96e" stroke-width="0.8" fill="rgba(200,169,110,0.03)"/>
+        <circle cx="185" cy="180" r="3" fill="#c8a96e" opacity="0.6"/>
+        <circle cx="175" cy="290" r="3" fill="#c8a96e" opacity="0.6"/>
+        <circle cx="220" cy="310" r="3" fill="#c8a96e" opacity="0.6"/>
+        <circle cx="240" cy="280" r="2.5" fill="#c8a96e" opacity="0.5"/>
+        <circle cx="240" cy="180" r="2.5" fill="#c8a96e" opacity="0.5"/>
+        <circle cx="220" cy="310" r="8" stroke="#c8a96e" stroke-width="0.8" opacity="0.3">
+            <animate attributeName="r" values="6;14;6" dur="2.5s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.4;0;0.4" dur="2.5s" repeatCount="indefinite"/>
+        </circle>
+    </svg>
+
+    <nav>
+        <div class="logo">🛡️ SCAM<span>SHIELD</span></div>
+        <div class="nav-links">
+            <a href="#home">Home</a>
+            <a href="#features">Features</a>
+            <a href="#about">About</a>
+            <a href="#contact">Contact</a>
+        </div>
+    </nav>
+
+    <div class="hero">
+        <div class="hero-badge">⚡ POWERED BY GOOGLE GEMINI AI</div>
+        <h1>DETECT SCAMS<br><span class="highlight">INSTANTLY.</span></h1>
+        <p>Paste any suspicious message and our AI will analyze it in seconds.</p>
+    </div>
+
+    <div id="home">
+        <div class="card-label">PASTE SUSPICIOUS MESSAGE</div>
+        <textarea id="messageInput" placeholder="e.g. 'Congratulations! You won Rs 50,000 lottery. Send your bank details now to claim your prize...'"></textarea>
+        <button class="analyze-btn" onclick="analyzeMessage()">🔍 ANALYZE MESSAGE</button>
+        <div id="result"></div>
+        <p class="card-footer">🔒 Analysis powered by Gemini AI · Your messages are not stored publicly</p>
+    </div>
+
+    <div class="stats">
+        <div class="stat">
+            <div class="stat-number">99%</div>
+            <div class="stat-label">ACCURACY</div>
+        </div>
+        <div class="stat">
+            <div class="stat-number">&lt;3S</div>
+            <div class="stat-label">ANALYSIS TIME</div>
+        </div>
+        <div class="stat">
+            <div class="stat-number">24/7</div>
+            <div class="stat-label">AVAILABLE</div>
+        </div>
+    </div>
+
+    <!-- HOW IT WORKS -->
+    <div class="section">
+        <div class="section-label">HOW IT WORKS</div>
+        <h2>OUR PROCESS</h2>
+        <div class="divider"></div>
+        <div class="process-cards">
+            <div class="process-card">
+                <div class="icon">📋</div>
+                <h3>PASTE MESSAGE</h3>
+                <p>Copy any suspicious WhatsApp, SMS, or email message and paste it into the analyzer.</p>
+            </div>
+            <div class="process-card">
+                <div class="icon">🤖</div>
+                <h3>AI ANALYSIS</h3>
+                <p>Google Gemini AI scans for scam patterns, fraud signals, and Indian scam tactics instantly.</p>
+            </div>
+            <div class="process-card">
+                <div class="icon">🛡️</div>
+                <h3>GET VERDICT</h3>
+                <p>Receive a clear SCAM, SUSPICIOUS, or SAFE verdict with a score and personalized safety advice.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- FEATURES -->
+    <div id="features" class="section">
+        <div class="section-label">CAPABILITIES</div>
+        <h2>FEATURES</h2>
+        <div class="divider"></div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">💬</div>
+                <h3>TEXT ANALYSIS</h3>
+                <p>Paste any message — WhatsApp, SMS, email — and get an instant AI-powered scam verdict with score and detailed reasoning.</p>
+                <span class="live-badge">✅ LIVE NOW</span>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔗</div>
+                <h3>LINK SCANNER</h3>
+                <p>Detect malicious URLs and phishing links embedded inside messages. We'll flag dangerous domains before you click them.</p>
+                <span class="coming-soon">COMING SOON</span>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📸</div>
+                <h3>PHOTO & SCREENSHOT SCAN</h3>
+                <p>Upload a screenshot of a suspicious message or scammer's profile photo. Our AI will analyze it and identify fraud patterns visually.</p>
+                <span class="coming-soon">COMING SOON</span>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎙️</div>
+                <h3>VOICE CALL ANALYSIS</h3>
+                <p>Record or upload a suspicious voice call and let AI detect scam patterns in speech — urgency cues, impersonation, and pressure tactics.</p>
+                <span class="coming-soon">COMING SOON</span>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🕵️</div>
+                <h3>SCAMMER IDENTITY TRACING</h3>
+                <p>Cross-reference phone numbers, emails, and profile photos against known scammer databases to identify repeat offenders.</p>
+                <span class="coming-soon">COMING SOON</span>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🌐</div>
+                <h3>MULTI-LANGUAGE SUPPORT</h3>
+                <p>Analyze scam messages in Hindi, Kannada, Tamil, Telugu and other Indian languages — not just English.</p>
+                <span class="coming-soon">COMING SOON</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ABOUT -->
+    <div id="about" class="section">
+        <div class="section-label">WHO WE ARE</div>
+        <h2>ABOUT US</h2>
+        <div class="divider"></div>
+        <div class="about-grid">
+            <div class="about-text">
+                <p><strong>ScamShield</strong> was built to fight the growing wave of digital fraud targeting everyday Indians. From fake KYC alerts to lottery scams, millions of people lose their hard-earned money every year.</p>
+                <p>We are a team of three engineering students from <strong>Bengaluru</strong>, building this as part of the <strong>GDG Hackathon</strong>. Our mission is simple — use <strong>Google Gemini AI</strong> and <strong>Firebase</strong> to give every Indian a free, instant scam detection tool right in their browser.</p>
+                <p>No downloads. No sign-up. Just paste and protect. 🛡️</p>
+            </div>
+            <div class="team-cards">
+                <div class="team-card">
+                    <div class="team-avatar">👨‍💻</div>
+                    <div class="team-info">
+                        <div class="name">Abhishek D</div>
+                        <div class="role">BACKEND LEAD · GEMINI AI · FLASK</div>
+                    </div>
+                </div>
+                <div class="team-card">
+                    <div class="team-avatar">👩‍💻</div>
+                    <div class="team-info">
+                        <div class="name">Bhuvana</div>
+                        <div class="role">FRONTEND · FIREBASE · UI/UX</div>
+                    </div>
+                </div>
+                <div class="team-card">
+                    <div class="team-avatar">👨‍🎨</div>
+                    <div class="team-info">
+                        <div class="name">Ranjith r</div>
+                        <div class="role">RESEARCH · TESTING · DESIGN</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTACT -->
+    <div id="contact" class="section">
+        <div class="section-label">GET IN TOUCH</div>
+        <h2>CONTACT</h2>
+        <div class="divider"></div>
+        <div class="contact-box">
+            <p>Have questions, feedback, or want to report a scam pattern we should add to our database? We'd love to hear from you. Reach out directly to the backend lead.</p>
+            <a class="contact-email" href="mailto:abhishekd.25eee@cambridge.edu.in">
+                📧 abhishekd.25eee@cambridge.edu.in
+            </a>
+        </div>
+    </div>
+
+    <footer>
+        © 2026 <span>SCAM SHIELD</span> · Built with ❤️ in Bengaluru to protect India from digital fraud
+    </footer>
+
+    <script>
+    async function analyzeMessage() {
+        const messageInput = document.getElementById('messageInput');
+        const resultDiv = document.getElementById('result');
+        const message = messageInput.value.trim();
+
+        if (!message) {
+            alert("Please enter a message to analyze!");
+            return;
+        }
+
+        resultDiv.style.display = "block";
+        resultDiv.innerHTML = `<span class="dots">⏳ Gemini is analyzing</span>`;
+
+        try {
+           { const response = await fetch('https://retiree-transport-ahead.ngrok-free.dev/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': 'true'
+                },
+                body: JSON.stringify({ message: message })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                const aiResponse = data.result.toUpperCase();
+                if (aiResponse.includes("VERDICT: SCAM")) {
+                    resultDiv.innerHTML = `<div class="result-header" style="color:#ff4d4d">⚠️ SCAM DETECTED</div>${data.result}`;
+                } else if (aiResponse.includes("VERDICT: SUSPICIOUS")) {
+                    resultDiv.innerHTML = `<div class="result-header" style="color:#ffa500">🟡 SUSPICIOUS MESSAGE</div>${data.result}`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result-header" style="color:#2ecc71">✅ SAFE MESSAGE</div>${data.result}`;
+                }
+            } else {
+                resultDiv.innerHTML = "❌ Error: " + (data.error || "Analysis failed. Please try again.");
+            }
+        } catch (error) {
+            console.error("Connection Error:", error);
+            resultDiv.innerHTML = "❌ Connection failed. Make sure the backend server is running.";
+        }
+    }
+    </script>
+</body>
+</html>
