@@ -90,8 +90,6 @@ def analyze():
     except Exception as e:
         print(f"❌ Unexpected error: {e}")
         return jsonify({"error": "Something went wrong. Please try again"}), 500
-
-
 if __name__ == "__main__":
     print("ScamShield Backend Starting...")
 app.run(debug=True, port=5000, host="0.0.0.0")
